@@ -1,0 +1,516 @@
+--Die Bedienungen:
+local args = {...}
+
+--Falls die Bedingung falsch seien sollte...
+Starten = true
+nob = true
+
+if not term.isColor or turtle then
+ error("Benoetigt einen advanced Computer")
+ Starten = false
+end
+
+if #args > 1 then
+ term.setTextColor(colors.red)
+ print("Benutzung: JS_Text        ")
+ print("           JS_Text <Datei>")
+ nob = false
+ Starten = false
+end
+
+if #args == 0 then
+ write("Datei: ")
+ DateiOrt = read()
+else
+ DateiOrt = args[1]
+end
+
+if nob == true and fs.isDir(DateiOrt) then
+ term.setTextColor(colors.red)
+ error("Du kannst keine Ordner verwenden")
+ Starten = false
+end
+----------------------------------------------
+
+
+-----Starte Richiges Programm-----------------
+if Starten == true then
+
+--Die Bildschirm groesse wird errechnet
+B,H = term.getSize()
+Breite = ""
+for i=1,B do
+ Breite = Breite.." "
+end
+
+--In dem Table "File" werden spaeter alle Seite/linien gespeichert
+File = {{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}}
+abfrage = true
+
+--Der Bildschirm wirdmit der aktuellen Seite gemalt 
+function Bildschirm()
+ --Datei wrid eingelesen
+ NurLesen = false
+ LoadFile()
+ --
+ TextColor = File[AktullSeite][1]
+ BackgroundColor = File[AktullSeite][2]
+ if tonumber(BackgroundColor) <= 0 then
+  BackgroundColor = 1
+ else
+  BackgroundColor = tonumber(BackgroundColor)
+ end
+ if tonumber(TextColor) <= 0 then
+  TextColor = 32768
+ else
+  TextColor = tonumber(TextColor)
+ end
+ term.setTextColor(TextColor)
+ term.setBackgroundColor(BackgroundColor)
+ term.clear()
+ --Der Inhalt von "File" wird gemalt
+ ReadPage()
+ --
+ term.setTextColor(1)
+ term.setCursorPos(1,1)
+ term.setBackgroundColor(colors.blue)
+ write(Breite)
+ term.setCursorPos(1,1)
+ write("                        JS_Text 1.7                ")
+ term.setCursorPos(1,H)
+ write(Breite)
+ term.setCursorPos(1,1)
+ term.setTextColor(colors.red)
+ write(DateiOrt)
+ term.setBackgroundColor(128)
+ term.setTextColor(256)
+ term.setCursorPos(1,H)
+ write("Menue")
+ --Im bearbeitungs Modus
+ if NurLesen == false then
+ term.setCursorPos(38,1)
+ write("T:")
+ term.setCursorPos(45,1)
+ write("B:")
+ term.setCursorPos(50,H)
+ write("<>")
+ term.setCursorPos(39,H)
+ write("Seite:")
+ term.setBackgroundColor(256)
+ term.setTextColor(1)
+ term.setCursorPos(47,1)
+ write("     ")
+ term.setCursorPos(40,1)
+ write("     ")
+ term.setCursorPos(40,1)
+ write(TextColor)
+ term.setCursorPos(47,1)
+ write(BackgroundColor)
+ term.setCursorPos(45,H)
+ write("     ")
+ term.setCursorPos(45,H)
+ write(AktullSeite.."/"..SeiteAnzahl)
+ end
+ --Im nur Lesen Modus
+ if NurLesen == true then
+ term.setTextColor(1)
+ term.setBackgroundColor(colors.blue)
+ term.setCursorPos(46,H)
+ write(AktullSeite.."/"..SeiteAnzahl)
+ term.setBackgroundColor(128)
+ term.setTextColor(256)
+ term.setCursorPos(22,H)
+ write(" < ")
+ term.setCursorPos(26,H)
+ write(" > ")
+ end  
+end
+
+--Datei Inhalt wrid geordnet in "File" eingespeichert
+function LoadFile() 
+ if fs.exists(DateiOrt) == false then
+  local file = fs.open(DateiOrt,"w")
+  file.writeLine("32768")
+  file.writeLine("1")
+  count = 17
+  while count > 0 do
+   file.writeLine("")
+   count = count-1
+  end
+  file.close()
+ end
+ 
+ local file = fs.open(DateiOrt,"r")
+ mach = true
+ linie = 0
+ seite = 1
+ while mach == true do
+  linie = linie+1
+  File[seite][linie] = file.readLine()
+  if linie == 1 and seite == 1 and File[1][1] == "nur lesen" then
+   linie = 0
+   NurLesen = true
+  end
+  if linie == 20 and File[seite][linie] == "neue seite" then
+   linie = 0
+   seite = seite+1
+  elseif linie == 20 then
+   SeiteAnzahl = seite
+   mach = false
+   file.close()
+  end
+ end
+end
+ 
+--Aus "File" werden die Informationen der aktuellen 
+--Seite gemalt
+function ReadPage() 
+ term.setCursorPos(1,2)
+ linie = 3
+ while linie < 20 do
+  print(File[AktullSeite][linie])
+  linie = linie+1
+ end
+end 
+ 
+--Die neuen Informationen aus "File" werden wieder
+--in die Datei reingeschrieben
+function Save()
+ Seiten = SeiteAnzahl
+ Seite = 1
+ linie = 0
+ local file = fs.open(DateiOrt,"w")
+ if NurLesen == true then
+  file.writeLine("nur lesen")
+ end
+ while Seiten > 0 do
+  linie = linie+1
+  file.writeLine(File[Seite][linie])
+  if linie == 20 and File[Seite][linie] == "neue seite" then
+   linie = 0
+   Seite = Seite+1
+   Seiten = Seiten-1
+  elseif linie == 19 and File[Seite][linie+1] ~= "neue seite" then
+   break
+  end
+ end
+ file.close()
+ Bildschirm()
+end
+
+--Das auslesen der Eingaben auf einer Linie
+function LA(pos,line,seite)
+  term.setBackgroundColor(BackgroundColor)
+  term.setTextColor(TextColor)
+  term.setCursorPos(1,pos)
+  write("                                                   ")
+  term.setCursorPos(1,pos)
+  File[seite][line+1] = read()
+end
+
+--Die Datei wird im Programm gewechselt (oben links clicken)
+function WechselDatei()
+ term.setCursorPos(1,1)
+ term.setTextColor(colors.red)
+ term.setBackgroundColor(colors.blue)
+ write("                     ")
+ term.setCursorPos(1,1)
+ eingabe = read()
+ if fs.isDir(eingabe) then
+  term.setCursorPos(1,1)
+  write("Kein Ordner !")
+  sleep(0.5)
+  term.setCursorPos(1,1)
+  write("             ")
+  term.setCursorPos(1,1)
+  write(DateiOrt)
+ else
+  shell.run("js_text",eingabe)
+  abfrage = false
+ end
+end
+
+--Eine neue seite wird in der Datei erstellt
+--und ausgelesen
+function NeueSeite()
+ local file = fs.open(DateiOrt,"a")
+ file.writeLine("neue seite")
+ file.writeLine("32768")
+ file.writeLine("1")
+ F = 1
+ while F < 18 do
+  file.writeLine("")
+  F = F+1
+ end
+ file.close()
+ SeiteAnzahl = SeiteAnzahl+1
+ AktullSeite = SeiteAnzahl
+end
+
+function Popup()
+ term.setCursorPos(1,(H-5))
+ term.setBackgroundColor(128)
+ term.setTextColor(256)
+ print("Menue     ")
+ if NurLesen == true then
+  term.setBackgroundColor(colors.red)
+ else
+  term.setBackgroundColor(256)
+ end
+ term.setTextColor(128)
+ print("nur lesen ")
+ term.setBackgroundColor(256)
+ print("Delete    ")
+ print("Save      ")
+ print("Exit      ")
+ --Abfrage
+ while true do
+  local event,button,X,Y = os.pullEvent("mouse_click")
+   if X >= 1 and X <=5 and Y == H and button == 1 then
+    term.setCursorPos(1,H)
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    write("Menue")
+    sleep(0.1)
+    Bildschirm()
+    Abfrage()
+    break
+   end
+   term.setBackgroundColor(128)
+   term.setTextColor(256)
+   if X >= 1 and X <=9 and Y == (H-1) and button == 1 then
+    term.setCursorPos(1,(H-1))
+    write("Exit      ")
+    sleep(0.1)
+    term.setBackgroundColor(colors.black)
+    term.clear()
+    term.setCursorPos(1,1)
+    abfrage = false
+    break
+   end
+   if X >= 1 and X <=9 and Y == (H-2) and button == 1 then
+    term.setCursorPos(1,(H-2))
+    write("Save      ")
+    sleep(0.1)
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    term.setCursorPos(1,(H-2))
+    write("Save      ")
+    Save()
+    Popup()
+    break
+   end
+   if X >= 1 and X <=9 and Y == (H-3) and button == 1 then
+    term.setCorsorPos(1,(H-3))
+    write("Delete    ")
+    sleep(0.1)
+    fs.delete(DateiOrt)
+    term.setBackgroundColor(colors.black)
+    shell.run("clear")
+    abfrage = false
+    break
+   end
+   if X >= 1 and X <=9 and Y == (H-4) and button == 1 then
+    term.setCursorPos(1,(H-4))
+    write("nur lesen ")
+    sleep(0.1)
+    NurLesen = true
+    Save()
+    Bildschirm()
+    Abfrage2()
+    break
+   end
+ end
+end
+
+function Popup2()
+ term.setBackgroundColor(128)
+ term.setTextColor(256)
+ term.setCursorPos(1,(H-4))
+ print("Menue      ")
+ term.setBackgroundColor(256)
+ term.setTextColor(128)
+ print("Bearbeiten ")
+ print("Delete     ")
+ print("Exit       ")
+ while true do
+  local event,button,X,Y = os.pullEvent("mouse_click")
+   term.setBackgroundColor(128)
+   term.setTextColor(256)
+   if X >= 1 and X <= 5 and Y == H and button == 1 then
+    term.setCursorPos(1,H)
+    term.setTextColor(128)
+    term.setBackgroundColor(256)
+    write("Menue")
+    sleep(0.1)
+    Bildschirm()
+    Abfrage2()
+    break
+   end
+   if X >= 1 and X <= 10 and Y == (H-1) and button == 1 then
+    term.setCursorPos(1,(H-1))
+    write("Exit       ")
+    sleep(0.1)
+    term.setBackgroundColor(colors.black)
+    shell.run("clear")
+    abfrage = false
+    break
+   end
+   if X >= 1 and X <= 10 and Y == (H-2) and button == 1 then
+    term.setCursorPos(1,(H-2))
+    write("Delete     ")
+    fs.delete(DateiOrt)
+    sleep(0.1)
+    term.setBackgroundColor(colors.black)
+    shell.run("clear")
+    abfrage = false
+    break
+   end
+   if X >= 1 and X <= 10 and Y == (H-3) and button == 1 then
+    term.setCursorPos(1,(H-3))
+    write("Bearbeiten ")
+    sleep(0.1)
+    NurLesen = false
+    Save()
+    Bildschirm()
+    Abfrage()
+    break
+   end
+ end
+end
+
+
+--Die Abfrage fuer alle functionen im arbeits Modus
+function Abfrage()
+ while abfrage == true do 
+  local event,button,X,Y = os.pullEvent("mouse_click")
+   if X >=1 and X <=5 and Y ==H and button == 1 then
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    term.setCursorPos(1,H)
+    write("Menue")
+    sleep(0.1)
+    term.setBackgroundColor(128)
+    term.setTextColor(256)
+    term.setCursorPos(1,H)
+    write("Menue")
+    Popup()
+   end
+   if X >=40 and X <=44 and Y ==1 and button ==1 then
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    term.setCursorPos(40,1)
+    write("     ")
+    term.setCursorPos(40,1)
+    eingabe = read()
+    if tonumber(eingabe) > 0 then
+     File[AktullSeite][1] = tonumber(eingabe)
+    else
+     term.setCursorPos(40,1)
+     write("     ")
+     term.setCursorPos(40,5)
+     write(File[AktullSeite][1])
+    end
+   end
+   if X >=47 and X <=51 and Y ==1 and button ==1 then
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    term.setCursorPos(47,1)
+    write("     ")
+    term.setCursorPos(47,1)
+    eingabe = read()
+    if tonumber(eingabe) > 0 then
+     File[AktullSeite][2] = tonumber(eingabe)
+    else
+     term.setCursorPos(47,1)
+     write("     ")
+     term.setCursorPos(40,5)
+     write(File[AktullSeite][2])
+    end
+   end
+   if X >=1 and X <=20 and Y ==1 and button ==1 then
+    WechselDatei()
+   end
+   if Y >=2 and Y <= H-1 and button == 1 then 
+    LA(Y,Y,AktullSeite)
+   end
+   if X == 51 and Y == H and button == 1 then
+    if AktullSeite < 20 then
+     if AktullSeite == SeiteAnzahl then
+      NeueSeite()
+      Bildschirm()
+     else
+      AktullSeite = AktullSeite+1
+      Bildschirm()
+     end
+    end
+   end
+   if X == 50 and Y == H and button == 1 then
+    if AktullSeite > 1 then
+     AktullSeite = AktullSeite-1
+     Bildschirm()
+    end
+   end
+ end
+end
+
+function Abfrage2()
+ while abfrage == true do
+  local event,button,X,Y = os.pullEvent("mouse_click")
+   if X >= 1 and X <= 5 and Y == H and button == 1 then
+    term.setCursorPos(1,H)
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    write("Menue")
+    sleep(0.1)
+    term.setCursorPos(1,H)
+    term.setBackgroundColor(128)
+    term.setTextColor(256)
+    write("Menue")
+    Popup2()
+   end
+   if X >= 22 and X <= 24 and Y == H and button == 1 then
+    term.setCursorPos(22,H)
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    write(" < ")
+    sleep(0.1)
+    term.setCursorPos(22,H)
+    term.setBackgroundColor(128)
+    term.setTextColor(256)
+    write(" < ")
+    if AktullSeite > 1 then
+     AktullSeite = AktullSeite-1
+     Bildschirm()
+    end
+   end
+   if X >= 26 and X <= 28 and Y == H and button == 1 then
+    term.setCursorPos(26,H)
+    term.setBackgroundColor(256)
+    term.setTextColor(128)
+    write(" > ")
+    sleep(0.1)
+    term.setCursorPos(26,H)
+    term.setBackgroundColor(128)
+    term.setTextColor(256)
+    write(" > ")
+    if AktullSeite < SeiteAnzahl then
+     AktullSeite = AktullSeite+1
+     Bildschirm()
+    end
+   end
+ end
+end
+    
+    
+
+-------<Startausfuerung>-------- 
+AktullSeite = 1
+Bildschirm()
+if NurLesen == false then
+ Abfrage()
+else
+ Abfrage2()
+end
+
+end
