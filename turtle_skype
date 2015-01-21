@@ -1,0 +1,91 @@
+if peripheral.getType("top") == "modem" then
+ rednet.open("top")
+end
+if peripheral.getType("bottom") == "modem" then
+ rednet.open("bottom")
+end
+if peripheral.getType("right") == "modem" then
+ rednet.open("right")
+end
+if peripheral.getType("left") == "modem" then
+ rednet.open("left")
+end
+if peripheral.getType("front") == "modem" then
+ rednet.open("front")
+end
+if peripheral.getType("back") == "modem" then
+ rednet.open("back")
+end
+rednet.send(65535,"Test")
+
+--User Name eingabe--
+term.setBackgroundColor(512)
+term.clear()
+term.setTextColor(1)
+term.setCursorPos(1,1)
+print("Wilkommen bei Skype")
+write("User Name eingeben : ")
+UserN = read()
+term.setCursorPos(1,3)
+write("ID des Chat partners : ")
+CPid = tonumber(read())
+term.setCursorPos(1,4)
+write("starten als sender/empfenger : ")
+StAls = read()
+
+--Nachichten--
+term.clear()
+pos = 3
+
+
+function Empfang()
+  term.setTextColor(colors.red)
+  term.setCursorPos(1,1)
+  print("Empfaengt...                           ")
+  term.setTextColor(1)
+  print("---------------------------------------")
+  id,message,dist = rednet.receive()
+  if id == CPid then
+  term.setCursorPos(1,pos)
+  print(message)
+  pos = pos+1
+  if pos == 14 then
+   pos = pos-1
+  end
+ else
+ Empfang()
+ end
+ Send()
+end
+
+
+function Eingabe()
+ term.setCursorPos(1,1)
+  print(">                                      ")
+ print("---------------------------------------")
+ term.setCursorPos(2,1)
+ eingabe = read()
+end
+
+
+function Send()
+ Eingabe()
+ text = UserN.." : "..eingabe
+ term.setCursorPos(1,pos)
+ pos = pos+1
+ if pos == 14 then
+  pos = pos-1
+ end
+ print(text)
+ rednet.send(CPid,text)
+ Empfang()
+end
+
+if StAls == "sender" then
+ Send()
+elseif StAls == "empfenger" then
+ Empfang()
+else
+ shell.run("js_crafterOS/skype")
+end
+
